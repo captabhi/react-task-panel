@@ -3,6 +3,11 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
+import axios from 'axios';
+
+axios.defaults.baseURL = 'http://devza.com';
+axios.defaults.headers.common['AuthToken'] = 'uRx4FmDDl1jIFguwuX7svTEGtdRWhXzC';
+axios.defaults.headers.post['Content-Type'] = 'application/json';
 
 ReactDOM.render(
   <React.StrictMode>
