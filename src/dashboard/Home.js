@@ -15,6 +15,8 @@ import CreateIcon from '@material-ui/icons/Create';
 import IconButton from '@material-ui/core/IconButton';
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
+import DeleteIcon from '@material-ui/icons/Delete';
+import UpdateTaskDialog from "./UpdateTaskDialog";
 
 
 
@@ -40,10 +42,14 @@ function Home(props) {
 
     const [tasks,setTasks] = useState([]);
     const [createTaskDialogBox,setCreateTaskDialogBoxState] = useState(false);
+    const [currentUpdateValue,setCurrentUpdateValue] = useState(null);
+    const [updateDialogBoxState,setUpdateDialogBoxState] = useState(false);
+    const [users,setUsers] = useState([])
     const [errors,setErrors] = useState(null);
 
     useEffect(()=>{
         fetchTasksList();
+        fetchUsersList();
     },[])
 
     const fetchTasksList = async () => {
@@ -58,6 +64,28 @@ function Home(props) {
         }
 
     }
+    const fetchUsersList = async () => {
+        try {
+            const result = await axios.get('tests/tasks/listusers');
+            setUsers(result.data.users);
+        }
+        catch (error) {
+
+        }
+    }
+
+    const deleteTask = async (taskId) => {
+        const formData = new FormData();
+        formData.append('taskid',taskId);
+        try {
+            const result = await axios.post('/tests/tasks/delete',formData);
+            console.log(result);
+        }
+        catch (error) {
+
+        }
+    }
+
 
     return (
         <Grid container justify={'center'}>
@@ -75,25 +103,32 @@ function Home(props) {
                         <TableHead>
                             <TableRow>
                                 <TableCell>Message</TableCell>
-                                <TableCell align="right">Due date</TableCell>
-                                <TableCell align="right">Priority(g)</TableCell>
-                                <TableCell align="right">Assigned to(g)</TableCell>
-                                <TableCell align="right">Actions</TableCell>
+                                <TableCell align="center">Due date</TableCell>
+                                <TableCell align="center">Priority</TableCell>
+                                <TableCell align="center">Assigned to</TableCell>
+                                <TableCell align="center">Actions</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             {tasks.map((task) => (
-                                <TableRow key={task.name}>
+                                <TableRow key={task.id}>
                                     <TableCell component="th" scope="row">
                                         {task.message}
                                     </TableCell>
-                                    <TableCell align="right">{task.due_date}</TableCell>
-                                    <TableCell align="right">{task.priority}</TableCell>
-                                    <TableCell align="right">{task.assigned_to}</TableCell>
+                                    <TableCell align="center">{task.due_date}</TableCell>
+                                    <TableCell align="center">{task.priority}</TableCell>
+                                    <TableCell align="center">{task.assigned_name}</TableCell>
                                     <TableCell align="center">
-                                        <IconButton aria-label="delete">
+                                        <IconButton aria-label="update" onClick={()=>{
+                                            setCurrentUpdateValue(task)
+                                            setUpdateDialogBoxState(true);
+                                        }}>
                                             <CreateIcon/>
                                         </IconButton>
+                                        <IconButton onClick={()=>deleteTask(task.id)} aria-label="delete">
+                                            <DeleteIcon/>
+                                        </IconButton>
+
                                     </TableCell>
                                 </TableRow>
                             ))}
@@ -103,6 +138,11 @@ function Home(props) {
                 <CreateTaskDialog
                     dialogBoxState={createTaskDialogBox}
                     setDialogBoxState={setCreateTaskDialogBoxState}
+                />
+                <UpdateTaskDialog
+                    initialValue={currentUpdateValue}
+                    dialogBoxState={updateDialogBoxState}
+                    setDialogBoxState={setUpdateDialogBoxState}
                 />
             </Grid>
         </Grid>

@@ -1,6 +1,4 @@
 import React, {useEffect, useState} from "react";
-import Typography from "@material-ui/core/Typography";
-import Paper from "@material-ui/core/Paper";
 import axios from 'axios';
 import Button from '@material-ui/core/Button';
 import TextField from '@material-ui/core/TextField';
@@ -49,16 +47,24 @@ const useStyles = makeStyles({
 });
 
 
-function CreateTaskDialog(props) {
+function UpdateTaskDialog(props) {
     const classes = useStyles();
     const {
+        initialValue,
         dialogBoxState,
         setDialogBoxState,
     } = props;
 
     useEffect(()=>{
         fetchUsersList();
-    },[])
+    },[]);
+    useEffect(()=>{
+        if(initialValue != null) {
+            setTask(initialValue);
+            const date = new Date(initialValue.due_date)
+            handleDateChange(date)
+        }
+    },[initialValue])
 
     const [task,setTask] = useState({});
     const [users,setUsers] = useState([])
@@ -88,14 +94,15 @@ function CreateTaskDialog(props) {
         return dateTime;
     }
 
-    const createNewTask = async () => {
+    const updateTask = async () => {
         try {
             let formData = new FormData();
+            formData.append('taskid',task.id)
             formData.append('message',task.message);
             formData.append('priority',task.priority);
             formData.append('due_date',convertDateTimeToRequiredFormat(selectedDate));
             formData.append('assigned_to',task.assigned_to);
-            const result = await axios.post('/tests/tasks/create',formData)
+            const result = await axios.post('/tests/tasks/update',formData)
             console.log(result);
 
         }
@@ -106,10 +113,10 @@ function CreateTaskDialog(props) {
     return (
         <div>
             <Dialog open={dialogBoxState}  aria-labelledby="form-dialog-title">
-                <DialogTitle id="form-dialog-title">Create a new task</DialogTitle>
+                <DialogTitle id="form-dialog-title">Update a new task</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Please create a new task y filling the following form.
+                        Please update the task by modifying values.
                     </DialogContentText>
                     <form className={classes.container} noValidate>
                     <TextField
@@ -158,7 +165,7 @@ function CreateTaskDialog(props) {
                             <InputLabel htmlFor="age-native-simple">Assigned to</InputLabel>
                             <Select
                                 native
-                                value={task.assignedTo}
+                                value={task.assigned_to}
                                 onChange={handleChange}
                                 name="assigned_to"
                             >
@@ -178,8 +185,8 @@ function CreateTaskDialog(props) {
                     <Button  color="primary" onClick={()=>setDialogBoxState(false)}>
                         Cancel
                     </Button>
-                    <Button  color="primary" onClick={()=>createNewTask()}>
-                        Create
+                    <Button  color="primary" onClick={()=>updateTask()}>
+                        Update
                     </Button>
                 </DialogActions>
             </Dialog>
@@ -187,4 +194,4 @@ function CreateTaskDialog(props) {
     )
 }
 
-export default CreateTaskDialog;
+export default UpdateTaskDialog;
