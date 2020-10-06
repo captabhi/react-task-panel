@@ -16,10 +16,12 @@ import 'date-fns';
 import DateFnsUtils from '@date-io/date-fns';
 import {
     MuiPickersUtilsProvider,
-    KeyboardDatePicker, KeyboardDateTimePicker,
+    DateTimePicker,
 } from '@material-ui/pickers';
 import InputLabel from "@material-ui/core/InputLabel";
 import Box from "@material-ui/core/Box";
+import {createNewTask, fetchUsersList} from "../CRUD_Operations";
+import {convertToPriority} from "../utils";
 
 
 const useStyles = makeStyles({
@@ -54,15 +56,21 @@ function CreateTaskDialog(props) {
     const {
         dialogBoxState,
         setDialogBoxState,
+        setReloadPage,
+        reloadState
     } = props;
 
     useEffect(()=>{
-        fetchUsersList();
+        async function waitForResult() {
+            const users = await fetchUsersList();
+            setUsers(users);
+        }
+        waitForResult();
     },[])
 
     const [task,setTask] = useState({});
     const [users,setUsers] = useState([])
-    const [selectedDate, handleDateChange] = useState(new Date("2018-01-01T00:00:00.000Z"));
+    const [selectedDate, handleDateChange] = useState(new Date());
     const handleChange = (event) => {
         setTask({
             ...task,
@@ -70,48 +78,22 @@ function CreateTaskDialog(props) {
         })
     }
 
-
-    const fetchUsersList = async () => {
-        try {
-            const result = await axios.get('tests/tasks/listusers');
-            setUsers(result.data.users);
-        }
-        catch (error) {
-
-        }
+    const handleCreate = async () => {
+        const result = await createNewTask(task,selectedDate);
+        setDialogBoxState(false);
+        setReloadPage(!reloadState);
     }
 
-    const convertDateTimeToRequiredFormat = (selectedDate) => {
-        const date = selectedDate.getFullYear().toString()+'-'+(selectedDate.getMonth()+1).toString()+'-'+selectedDate.getDate().toString()
-        const time = selectedDate.getHours().toString()+':'+selectedDate.getMinutes().toString()+':'+'00';
-        const dateTime = date+' '+time;
-        return dateTime;
-    }
 
-    const createNewTask = async () => {
-        try {
-            let formData = new FormData();
-            formData.append('message',task.message);
-            formData.append('priority',task.priority);
-            formData.append('due_date',convertDateTimeToRequiredFormat(selectedDate));
-            formData.append('assigned_to',task.assigned_to);
-            const result = await axios.post('/tests/tasks/create',formData)
-            console.log(result);
-
-        }
-        catch (error) {
-            console.log(error);
-        }
-    }
     return (
         <div>
             <Dialog open={dialogBoxState}  aria-labelledby="form-dialog-title">
                 <DialogTitle id="form-dialog-title">Create a new task</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Please create a new task y filling the following form.
+                        Please create a new task by filling the following form.
                     </DialogContentText>
-                    <form className={classes.container} noValidate>
+                    <form className={classes.container}  noValidate>
                     <TextField
                         className={classes.message}
                         autoFocus
@@ -124,16 +106,13 @@ function CreateTaskDialog(props) {
                         onChange={handleChange}
                     />
                     </form>
-                    <form className={classes.container} noValidate>
+                    <form className={classes.container} style={{padding:'0.5rem'}} noValidate>
                         <MuiPickersUtilsProvider utils={DateFnsUtils}>
-                        <KeyboardDateTimePicker
-                            variant="inline"
+                        <DateTimePicker
                             ampm={false}
-                            label="With keyboard"
-                            value={task.due_date}
+                            value={selectedDate}
                             onChange={handleDateChange}
                             onError={console.log}
-                            disablePast
                             format="yyyy/MM/dd HH:mm"
                         />
                         </MuiPickersUtilsProvider>
@@ -149,8 +128,8 @@ function CreateTaskDialog(props) {
 
                             >
                                 <option aria-label="None" value="" />
-                                {[...Array(10).keys()].map((priority,index)=>
-                                    (<option value={priority+1} key={index}>{priority+1}</option>)
+                                {[...Array(3).keys()].map((priority,index)=>
+                                    (<option value={priority+1} key={index}>{convertToPriority((priority+1).toString())}</option>)
                                 )}
                             </Select>
                         </FormControl>
@@ -171,14 +150,12 @@ function CreateTaskDialog(props) {
                             </Select>
                         </FormControl>
                     </Box>
-
-
                 </DialogContent>
                 <DialogActions>
                     <Button  color="primary" onClick={()=>setDialogBoxState(false)}>
                         Cancel
                     </Button>
-                    <Button  color="primary" onClick={()=>createNewTask()}>
+                    <Button  color="primary" onClick={handleCreate}>
                         Create
                     </Button>
                 </DialogActions>

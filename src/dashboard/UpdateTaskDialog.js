@@ -18,6 +18,8 @@ import {
 } from '@material-ui/pickers';
 import InputLabel from "@material-ui/core/InputLabel";
 import Box from "@material-ui/core/Box";
+import {fetchUsersList, updateTask} from "../CRUD_Operations";
+import {convertToPriority} from "../utils";
 
 
 const useStyles = makeStyles({
@@ -53,10 +55,16 @@ function UpdateTaskDialog(props) {
         initialValue,
         dialogBoxState,
         setDialogBoxState,
+        setReloadPage,
+        reloadState
     } = props;
 
     useEffect(()=>{
-        fetchUsersList();
+        async function waitForResult() {
+            const users = await fetchUsersList();
+            setUsers(users);
+        }
+        waitForResult();
     },[]);
     useEffect(()=>{
         if(initialValue != null) {
@@ -76,40 +84,12 @@ function UpdateTaskDialog(props) {
         })
     }
 
-
-    const fetchUsersList = async () => {
-        try {
-            const result = await axios.get('tests/tasks/listusers');
-            setUsers(result.data.users);
-        }
-        catch (error) {
-
-        }
+    const handleUpdate = async () => {
+        const result = await updateTask(task,selectedDate);
+        setDialogBoxState(false);
+        setReloadPage(!reloadState);
     }
 
-    const convertDateTimeToRequiredFormat = (selectedDate) => {
-        const date = selectedDate.getFullYear().toString()+'-'+(selectedDate.getMonth()+1).toString()+'-'+selectedDate.getDate().toString()
-        const time = selectedDate.getHours().toString()+':'+selectedDate.getMinutes().toString()+':'+'00';
-        const dateTime = date+' '+time;
-        return dateTime;
-    }
-
-    const updateTask = async () => {
-        try {
-            let formData = new FormData();
-            formData.append('taskid',task.id)
-            formData.append('message',task.message);
-            formData.append('priority',task.priority);
-            formData.append('due_date',convertDateTimeToRequiredFormat(selectedDate));
-            formData.append('assigned_to',task.assigned_to);
-            const result = await axios.post('/tests/tasks/update',formData)
-            console.log(result);
-
-        }
-        catch (error) {
-            console.log(error);
-        }
-    }
     return (
         <div>
             <Dialog open={dialogBoxState}  aria-labelledby="form-dialog-title">
@@ -131,16 +111,14 @@ function UpdateTaskDialog(props) {
                         onChange={handleChange}
                     />
                     </form>
-                    <form className={classes.container} noValidate>
+                    <form className={classes.container} style={{padding:'0.5rem'}} noValidate>
                         <MuiPickersUtilsProvider utils={DateFnsUtils}>
                         <KeyboardDateTimePicker
                             variant="inline"
                             ampm={false}
-                            label="With keyboard"
                             value={task.due_date}
                             onChange={handleDateChange}
                             onError={console.log}
-                            disablePast
                             format="yyyy/MM/dd HH:mm"
                         />
                         </MuiPickersUtilsProvider>
@@ -156,8 +134,8 @@ function UpdateTaskDialog(props) {
 
                             >
                                 <option aria-label="None" value="" />
-                                {[...Array(10).keys()].map((priority,index)=>
-                                    (<option value={priority+1} key={index}>{priority+1}</option>)
+                                {[...Array(3).keys()].map((priority,index)=>
+                                    (<option value={priority+1} key={index}>{convertToPriority((priority+1).toString())}</option>)
                                 )}
                             </Select>
                         </FormControl>
@@ -185,7 +163,7 @@ function UpdateTaskDialog(props) {
                     <Button  color="primary" onClick={()=>setDialogBoxState(false)}>
                         Cancel
                     </Button>
-                    <Button  color="primary" onClick={()=>updateTask()}>
+                    <Button  color="primary" onClick={handleUpdate}>
                         Update
                     </Button>
                 </DialogActions>
