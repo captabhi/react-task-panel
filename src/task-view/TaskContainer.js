@@ -4,6 +4,8 @@ import {useDrop} from "react-dnd";
 import Types from "../Constants";
 import {updateTask} from "../CRUD_Operations";
 import Paper from "@material-ui/core/Paper";
+import {Typography} from "@material-ui/core";
+import {convertToPriority} from "../utils";
 
 const useStyles = makeStyles({
     taskContainer:{
@@ -34,6 +36,9 @@ function TaskContainer({taskArray,setPriorityTask,containerPriority,children}) {
 
     return (
         <Paper variant="outlined" className={classes.taskContainer} ref={drop} >
+            <Typography style={{textAlign:'center',fontSize:'1.5rem'}}>
+                {convertToPriority(containerPriority)}
+            </Typography>
             {children}
         </Paper>
     )

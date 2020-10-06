@@ -10,7 +10,14 @@ import Types from "../Constants";
 import {useDrop} from "react-dnd";
 import TaskContainer from "./TaskContainer";
 import {fetchTasksList} from "../CRUD_Operations";
+import CircularProgress from "@material-ui/core/CircularProgress";
+import Box from "@material-ui/core/Box";
 
+const useStyles = makeStyles({
+    loadingBox:{
+        marginTop:'5rem'
+    }
+})
 
 const taskTypes = [
     {
@@ -26,13 +33,16 @@ const taskTypes = [
 
 function ViewByPriority(props) {
 
+    const [loading,setLoading] = useState(false);
     const [taskList,setTaskList] = useState(null)
-
+    const classes = useStyles();
 
     useEffect( ()=> {
+        setLoading(true);
         async function waitForResult() {
             const result = await fetchTasksList();
             setTaskList(result);
+            setLoading(false);
         }
         waitForResult();
 
@@ -41,30 +51,32 @@ function ViewByPriority(props) {
     return (
 
             <Grid container justify={'center'}>
-                <Grid item xs={11}>
-                    <Typography style={{textAlign:'center',fontSize:'2rem'}}>
-                        Task based on priority
-                    </Typography>
+                {
+                  !loading ?   <Grid item xs={11}>
+                        <Typography style={{textAlign:'center',fontSize:'2rem'}}>
+                            Task based on priority
+                        </Typography>
 
-                    <Grid container justify={'center'} spacing={2}>
+                        <Grid container justify={'center'} spacing={2}>
                             {taskTypes.map((taskType)=> (
-                                <Grid item xs={4} >
-                                    <TaskContainer
-                                        taskArray={taskList}
-                                        setPriorityTask={setTaskList}
-                                        containerPriority={taskType.priority}
-                                    >
-                                        {taskList && taskList.filter(task=>task.priority === taskType.priority).map(task => (
-                                            <TaskComponent
-                                                task={task}
-                                            />
-                                        ))}
-                                    </TaskContainer>
-                                </Grid>
+                                    <Grid item xs={4} >
+                                        <TaskContainer
+                                            taskArray={taskList}
+                                            setPriorityTask={setTaskList}
+                                            containerPriority={taskType.priority}
+                                        >
+                                            {taskList && taskList.filter(task=>task.priority === taskType.priority).map(task => (
+                                                <TaskComponent
+                                                    task={task}
+                                                />
+                                            ))}
+                                        </TaskContainer>
+                                    </Grid>
                                 )
                             )}
-                    </Grid>
-                </Grid>
+                        </Grid>
+                    </Grid> : <Box className={classes.loadingBox}> <CircularProgress /> </Box>
+                }
             </Grid>
     )
 }
